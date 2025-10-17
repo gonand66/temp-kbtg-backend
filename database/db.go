@@ -39,7 +39,76 @@ func InitDB() error {
 	);`
 
 	if _, err = DB.Exec(createTableQuery); err != nil {
-		return fmt.Errorf("failed to create table: %v", err)
+		return fmt.Errorf("failed to create users table: %v", err)
+	}
+
+	// Create transfers table
+	createTransfersTable := `
+	CREATE TABLE IF NOT EXISTS transfers (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		from_user_id INTEGER NOT NULL,
+		to_user_id INTEGER NOT NULL,
+		amount INTEGER NOT NULL CHECK (amount > 0),
+		status TEXT NOT NULL CHECK (status IN ('pending','processing','completed','failed','cancelled','reversed')),
+		note TEXT,
+		idempotency_key TEXT NOT NULL UNIQUE,
+		created_at TEXT NOT NULL,
+		updated_at TEXT NOT NULL,
+		completed_at TEXT,
+		fail_reason TEXT,
+		FOREIGN KEY (from_user_id) REFERENCES users(id),
+		FOREIGN KEY (to_user_id) REFERENCES users(id)
+	);`
+
+	if _, err = DB.Exec(createTransfersTable); err != nil {
+		return fmt.Errorf("failed to create transfers table: %v", err)
+	}
+
+	// Create indexes for transfers
+	transferIndexes := []string{
+		"CREATE INDEX IF NOT EXISTS idx_transfers_from ON transfers(from_user_id);",
+		"CREATE INDEX IF NOT EXISTS idx_transfers_to ON transfers(to_user_id);",
+		"CREATE INDEX IF NOT EXISTS idx_transfers_created ON transfers(created_at);",
+		"CREATE INDEX IF NOT EXISTS idx_transfers_idem_key ON transfers(idempotency_key);",
+	}
+
+	for _, indexSQL := range transferIndexes {
+		if _, err = DB.Exec(indexSQL); err != nil {
+			return fmt.Errorf("failed to create transfer index: %v", err)
+		}
+	}
+
+	// Create point_ledger table
+	createLedgerTable := `
+	CREATE TABLE IF NOT EXISTS point_ledger (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		change INTEGER NOT NULL,
+		balance_after INTEGER NOT NULL,
+		event_type TEXT NOT NULL CHECK (event_type IN ('transfer_out','transfer_in','adjust','earn','redeem')),
+		transfer_id INTEGER,
+		reference TEXT,
+		metadata TEXT,
+		created_at TEXT NOT NULL,
+		FOREIGN KEY (user_id) REFERENCES users(id),
+		FOREIGN KEY (transfer_id) REFERENCES transfers(id)
+	);`
+
+	if _, err = DB.Exec(createLedgerTable); err != nil {
+		return fmt.Errorf("failed to create point_ledger table: %v", err)
+	}
+
+	// Create indexes for point_ledger
+	ledgerIndexes := []string{
+		"CREATE INDEX IF NOT EXISTS idx_ledger_user ON point_ledger(user_id);",
+		"CREATE INDEX IF NOT EXISTS idx_ledger_transfer ON point_ledger(transfer_id);",
+		"CREATE INDEX IF NOT EXISTS idx_ledger_created ON point_ledger(created_at);",
+	}
+
+	for _, indexSQL := range ledgerIndexes {
+		if _, err = DB.Exec(indexSQL); err != nil {
+			return fmt.Errorf("failed to create ledger index: %v", err)
+		}
 	}
 
 	log.Println("✅ Database initialized successfully")

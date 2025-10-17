@@ -9,7 +9,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// GetAllUsers - GET /users
+// GetAllUsers godoc
+// @Summary Get all users
+// @Description ดึงรายการผู้ใช้ทั้งหมด
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "success, data, total"
+// @Failure 500 {object} map[string]interface{} "error response"
+// @Router /users [get]
 func GetAllUsers(c *fiber.Ctx) error {
 	rows, err := database.DB.Query(`
 		SELECT id, membership_id, first_name, last_name, phone_number, email, 
@@ -59,7 +67,16 @@ func GetAllUsers(c *fiber.Ctx) error {
 	})
 }
 
-// GetUserByID - GET /users/:id
+// GetUserByID godoc
+// @Summary Get user by ID
+// @Description ดึงข้อมูลผู้ใช้รายบุคคล
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} map[string]interface{} "success, data"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Router /users/{id} [get]
 func GetUserByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -95,7 +112,17 @@ func GetUserByID(c *fiber.Ctx) error {
 	})
 }
 
-// CreateUser - POST /users
+// CreateUser godoc
+// @Summary Create a new user
+// @Description สร้างผู้ใช้ใหม่
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body models.CreateUserRequest true "User data"
+// @Success 201 {object} map[string]interface{} "success, message, data"
+// @Failure 400 {object} map[string]interface{} "Validation error"
+// @Failure 409 {object} map[string]interface{} "Email already exists"
+// @Router /users [post]
 func CreateUser(c *fiber.Ctx) error {
 	var req models.CreateUserRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -178,7 +205,18 @@ func CreateUser(c *fiber.Ctx) error {
 	})
 }
 
-// UpdateUser - PUT /users/:id
+// UpdateUser godoc
+// @Summary Update user
+// @Description แก้ไขข้อมูลผู้ใช้
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Param user body models.UpdateUserRequest true "User update data"
+// @Success 200 {object} map[string]interface{} "success, message, data"
+// @Failure 400 {object} map[string]interface{} "Validation error"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Router /users/{id} [put]
 func UpdateUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -278,7 +316,16 @@ func UpdateUser(c *fiber.Ctx) error {
 	})
 }
 
-// DeleteUser - DELETE /users/:id
+// DeleteUser godoc
+// @Summary Delete user
+// @Description ลบผู้ใช้
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} map[string]interface{} "success, message"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Router /users/{id} [delete]
 func DeleteUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 
