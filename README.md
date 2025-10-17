@@ -384,40 +384,43 @@ curl -X DELETE http://localhost:3000/users/1
 ### Database Schema
 
 #### Transfers Table
+
 เก็บคำสั่งโอนแต้ม พร้อม idempotency key สำหรับค้นหา
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | Integer | ID ภายในระบบ (Auto-increment) |
-| `from_user_id` | Integer | ID ของผู้โอน |
-| `to_user_id` | Integer | ID ของผู้รับ |
-| `amount` | Integer | จำนวนแต้มที่โอน (> 0) |
-| `status` | String | สถานะ (pending/processing/completed/failed/cancelled/reversed) |
-| `note` | String | หมายเหตุ (optional) |
-| `idempotency_key` | String | Unique key สำหรับค้นหาและป้องกันการโอนซ้ำ |
-| `created_at` | DateTime | วันที่สร้าง |
-| `updated_at` | DateTime | วันที่อัปเดตล่าสุด |
-| `completed_at` | DateTime | วันที่ทำสำเร็จ |
-| `fail_reason` | String | เหตุผลที่ล้มเหลว (ถ้ามี) |
+| Field             | Type     | Description                                                    |
+| ----------------- | -------- | -------------------------------------------------------------- |
+| `id`              | Integer  | ID ภายในระบบ (Auto-increment)                                  |
+| `from_user_id`    | Integer  | ID ของผู้โอน                                                   |
+| `to_user_id`      | Integer  | ID ของผู้รับ                                                   |
+| `amount`          | Integer  | จำนวนแต้มที่โอน (> 0)                                          |
+| `status`          | String   | สถานะ (pending/processing/completed/failed/cancelled/reversed) |
+| `note`            | String   | หมายเหตุ (optional)                                            |
+| `idempotency_key` | String   | Unique key สำหรับค้นหาและป้องกันการโอนซ้ำ                      |
+| `created_at`      | DateTime | วันที่สร้าง                                                    |
+| `updated_at`      | DateTime | วันที่อัปเดตล่าสุด                                             |
+| `completed_at`    | DateTime | วันที่ทำสำเร็จ                                                 |
+| `fail_reason`     | String   | เหตุผลที่ล้มเหลว (ถ้ามี)                                       |
 
 #### Point Ledger Table
+
 สมุดบัญชีแต้ม - บันทึกทุกการเปลี่ยนแปลงแต้ม (Append-only)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | Integer | ID ภายในระบบ |
-| `user_id` | Integer | ID ของผู้ใช้ |
-| `change` | Integer | จำนวนที่เปลี่ยนแปลง (+รับ / -โอนออก) |
-| `balance_after` | Integer | ยอดคงเหลือหลังทำรายการ |
-| `event_type` | String | ประเภท (transfer_out/transfer_in/adjust/earn/redeem) |
-| `transfer_id` | Integer | อ้างอิงถึง transfers.id |
-| `reference` | String | ข้อมูลอ้างอิงเพิ่มเติม |
-| `metadata` | String | JSON metadata |
-| `created_at` | DateTime | วันที่สร้าง |
+| Field           | Type     | Description                                          |
+| --------------- | -------- | ---------------------------------------------------- |
+| `id`            | Integer  | ID ภายในระบบ                                         |
+| `user_id`       | Integer  | ID ของผู้ใช้                                         |
+| `change`        | Integer  | จำนวนที่เปลี่ยนแปลง (+รับ / -โอนออก)                 |
+| `balance_after` | Integer  | ยอดคงเหลือหลังทำรายการ                               |
+| `event_type`    | String   | ประเภท (transfer_out/transfer_in/adjust/earn/redeem) |
+| `transfer_id`   | Integer  | อ้างอิงถึง transfers.id                              |
+| `reference`     | String   | ข้อมูลอ้างอิงเพิ่มเติม                               |
+| `metadata`      | String   | JSON metadata                                        |
+| `created_at`    | DateTime | วันที่สร้าง                                          |
 
 ### Transfer API Endpoints
 
 #### 1. Create Transfer (POST /transfers)
+
 สร้างคำสั่งโอนแต้ม - ระบบจะ generate Idempotency-Key ให้อัตโนมัติ
 
 ```http
@@ -426,6 +429,7 @@ Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "fromUserId": 1,
@@ -436,6 +440,7 @@ Content-Type: application/json
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "transfer": {
@@ -454,11 +459,13 @@ Content-Type: application/json
 ```
 
 **Response Headers:**
+
 ```
 Idempotency-Key: 5d1f8c7a-2b5b-4b1f-9f2a-8f50b0a8d9f3
 ```
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:3000/transfers \
   -H "Content-Type: application/json" \
@@ -473,6 +480,7 @@ curl -X POST http://localhost:3000/transfers \
 **Error Responses:**
 
 - **400 Bad Request**: ข้อมูลไม่ถูกต้อง
+
 ```json
 {
   "error": "VALIDATION_ERROR",
@@ -481,6 +489,7 @@ curl -X POST http://localhost:3000/transfers \
 ```
 
 - **404 Not Found**: ไม่พบผู้ใช้
+
 ```json
 {
   "error": "NOT_FOUND",
@@ -489,6 +498,7 @@ curl -X POST http://localhost:3000/transfers \
 ```
 
 - **409 Conflict**: แต้มไม่พอ
+
 ```json
 {
   "error": "INSUFFICIENT_POINTS",
@@ -497,6 +507,7 @@ curl -X POST http://localhost:3000/transfers \
 ```
 
 - **422 Unprocessable Entity**: โอนให้ตัวเอง
+
 ```json
 {
   "error": "BUSINESS_RULE_VIOLATION",
@@ -505,6 +516,7 @@ curl -X POST http://localhost:3000/transfers \
 ```
 
 #### 2. Get Transfer by ID (GET /transfers/{id})
+
 ดูสถานะคำสั่งโอน - ใช้ `idemKey` เป็น id
 
 ```http
@@ -512,11 +524,13 @@ GET /transfers/{idemKey}
 ```
 
 **Example:**
+
 ```bash
 curl http://localhost:3000/transfers/5d1f8c7a-2b5b-4b1f-9f2a-8f50b0a8d9f3
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "transfer": {
@@ -535,6 +549,7 @@ curl http://localhost:3000/transfers/5d1f8c7a-2b5b-4b1f-9f2a-8f50b0a8d9f3
 ```
 
 **Error Response (404 Not Found):**
+
 ```json
 {
   "error": "NOT_FOUND",
@@ -543,6 +558,7 @@ curl http://localhost:3000/transfers/5d1f8c7a-2b5b-4b1f-9f2a-8f50b0a8d9f3
 ```
 
 #### 3. Get Transfer History (GET /transfers)
+
 ค้นหา/ดูประวัติการโอน - กรองด้วย userId (แสดงทั้งโอนออกและรับเข้า)
 
 ```http
@@ -550,16 +566,19 @@ GET /transfers?userId={userId}&page={page}&pageSize={pageSize}
 ```
 
 **Query Parameters:**
+
 - `userId` (required): ID ของผู้ใช้ที่ต้องการดูประวัติ
 - `page` (optional, default=1): หน้าที่ต้องการ
 - `pageSize` (optional, default=20, max=200): จำนวนรายการต่อหน้า
 
 **Example:**
+
 ```bash
 curl "http://localhost:3000/transfers?userId=1&page=1&pageSize=20"
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "data": [
@@ -595,24 +614,24 @@ curl "http://localhost:3000/transfers?userId=1&page=1&pageSize=20"
 
 ### Transfer Status Values
 
-| Status | Description |
-|--------|-------------|
-| `pending` | รอดำเนินการ |
+| Status       | Description    |
+| ------------ | -------------- |
+| `pending`    | รอดำเนินการ    |
 | `processing` | กำลังดำเนินการ |
-| `completed` | สำเร็จ |
-| `failed` | ล้มเหลว |
-| `cancelled` | ยกเลิก |
-| `reversed` | ย้อนกลับ |
+| `completed`  | สำเร็จ         |
+| `failed`     | ล้มเหลว        |
+| `cancelled`  | ยกเลิก         |
+| `reversed`   | ย้อนกลับ       |
 
 ### Event Types (Point Ledger)
 
-| Event Type | Description |
-|------------|-------------|
-| `transfer_out` | โอนแต้มออก (ลบแต้ม) |
-| `transfer_in` | รับโอนแต้ม (เพิ่มแต้ม) |
-| `adjust` | ปรับปรุงแต้ม |
-| `earn` | ได้รับแต้ม |
-| `redeem` | แลกแต้ม |
+| Event Type     | Description            |
+| -------------- | ---------------------- |
+| `transfer_out` | โอนแต้มออก (ลบแต้ม)    |
+| `transfer_in`  | รับโอนแต้ม (เพิ่มแต้ม) |
+| `adjust`       | ปรับปรุงแต้ม           |
+| `earn`         | ได้รับแต้ม             |
+| `redeem`       | แลกแต้ม                |
 
 ### Business Rules
 

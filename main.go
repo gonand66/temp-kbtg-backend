@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	_ "temp-kbtg-backend/docs"
+
 	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
